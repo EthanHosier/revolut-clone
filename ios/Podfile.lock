@@ -87,6 +87,8 @@ PODS:
     - glog
     - RCT-Folly (= 2022.05.16.00)
     - React-Core
+  - ExpoBlur (12.9.2):
+    - ExpoModulesCore
   - ExpoCrypto (12.8.1):
     - ExpoModulesCore
   - ExpoFileSystem (16.0.8):
@@ -1217,6 +1219,7 @@ DEPENDENCIES:
   - expo-dev-launcher (from `../node_modules/expo-dev-launcher`)
   - expo-dev-menu (from `../node_modules/expo-dev-menu`)
   - expo-dev-menu-interface (from `../node_modules/expo-dev-menu-interface/ios`)
+  - ExpoBlur (from `../node_modules/expo-blur/ios`)
   - ExpoCrypto (from `../node_modules/expo-crypto/ios`)
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios`)
   - ExpoHead (from `../node_modules/expo-router/ios`)
@@ -1323,6 +1326,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-dev-menu"
   expo-dev-menu-interface:
     :path: "../node_modules/expo-dev-menu-interface/ios"
+  ExpoBlur:
+    :path: "../node_modules/expo-blur/ios"
   ExpoCrypto:
     :path: "../node_modules/expo-crypto/ios"
   ExpoFileSystem:
@@ -1470,6 +1475,7 @@ SPEC CHECKSUMS:
   expo-dev-launcher: f45e0f751addcc5ff891e0446e4762508b9030f2
   expo-dev-menu: 0e07e86ed397e431ee1171bb26caf7dc69cb494d
   expo-dev-menu-interface: 7ba029c9d1a82ac22b9b584c00514860b060553e
+  ExpoBlur: e832d874bd94afc0645daddbd3162ec1ce172080
   ExpoCrypto: b6428f48599c007676dc81a9b5f72c07e62fdccc
   ExpoFileSystem: eecaf6796aed0f4dd20042dc2ca2cac6c4bc1185
   ExpoHead: 8224345e80abcf4c97b31c99805dd5a3c8d3404d
