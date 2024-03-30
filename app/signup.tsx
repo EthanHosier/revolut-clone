@@ -10,13 +10,34 @@ import {
 import React, { useState } from "react";
 import { defaultStyles } from "@/constants/Styles";
 import Colors from "@/constants/Colors";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
+import { useSignUp } from "@clerk/clerk-expo";
 
 const Page = () => {
   const [countryCode, setCountryCode] = useState("+44");
   const [phoneNumber, setPhoneNumber] = useState("");
 
-  const onSignup = async () => {};
+  const router = useRouter();
+  const { signUp } = useSignUp();
+
+  const onSignup = async () => {
+    const fullPhoneNumber = `${countryCode}${phoneNumber}`;
+
+    try {
+      await signUp!.create({
+        phoneNumber: fullPhoneNumber,
+      });
+      signUp!.preparePhoneNumberVerification();
+      // Use 'as' assertion to explicitly specify the type of the argument
+      router.push({
+        pathname: "/verify/[phone]",
+        params: { phone: fullPhoneNumber }, // Use 'query' instead of 'params'
+      } as any);
+    } catch (error) {
+      console.error("Error signing up:", error);
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
