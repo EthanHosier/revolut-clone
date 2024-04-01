@@ -4,20 +4,33 @@ import {
   SectionList,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { defaultStyles } from "@/constants/Styles";
 import Colors from "@/constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { CartesianChart, Line } from "victory-native";
+import { CartesianChart, Line, useChartPressState } from "victory-native";
 import { Ticker } from "@/interfaces/crypto";
-import { useFont } from "@shopify/react-native-skia";
+import { Circle, useFont } from "@shopify/react-native-skia";
 import { format } from "date-fns";
+import * as Haptics from "expo-haptics";
+import Animated, {
+  SharedValue,
+  useAnimatedProps,
+} from "react-native-reanimated";
+
+Animated.addWhitelistedNativeProps({ text: true });
+const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
+
+function ToolTip({ x, y }: { x: SharedValue<number>; y: SharedValue<number> }) {
+  return <Circle cx={x} cy={y} r={8} color={Colors.primary} />;
+}
 
 const CATEGORIES = ["Overview", "News", "Orders", "Transactions"];
 
@@ -27,6 +40,14 @@ const Page = () => {
   const font = useFont(require("@/assets/fonts/SpaceMono-Regular.ttf"));
 
   const [activeIndex, setActiveIndex] = useState(0);
+
+  const { state, isActive } = useChartPressState({ x: 0, y: { price: 0 } });
+
+  useEffect(() => {
+    console.log({ isActive });
+    if (!isActive) return;
+    Haptics.selectionAsync();
+  }, [isActive]);
 
   const { data } = useQuery({
     queryKey: ["info", id], //differentiate between different queries based on ids (different params)
@@ -41,6 +62,21 @@ const Page = () => {
     queryKey: ["tickers"],
     queryFn: async (): Promise<Ticker[]> =>
       await fetch(`/api/tickers`).then((res) => res.json()),
+  });
+
+  const animatedText = useAnimatedProps(() => {
+    return {
+      text: `£${state.y.price.value.value.toFixed(2)}`,
+      defaultValue: "",
+    };
+  });
+
+  const animatedDateText = useAnimatedProps(() => {
+    const date = new Date(state.x.value.value);
+    return {
+      text: `${date.toLocaleDateString()}`,
+      defaultValue: "",
+    };
   });
 
   return (
@@ -145,29 +181,86 @@ const Page = () => {
         renderItem={({ item }) => (
           <>
             <View style={[defaultStyles.block, { height: 500 }]}>
-              {font && (
-                <CartesianChart
-                  data={(tickers ?? []) as any[]}
-                  axisOptions={{
-                    font: font,
-                    tickCount: 5,
-                    labelOffset: { x: -2, y: 0 },
-                    formatYLabel: (value) => `£${value / 1000}k`,
-                    formatXLabel: (ms) => format(new Date(ms), "MM/yy"),
-                  }}
-                  xKey="timestamp"
-                  yKeys={["price"]}
-                >
-                  {/* 👇 render function exposes various data, such as points. */}
-                  {({ points }) => (
-                    // 👇 and we'll use the Line component to render a line path.
-                    <Line
-                      points={points.price}
-                      color={Colors.primary}
-                      strokeWidth={3}
-                    />
+              {font && tickers && (
+                <>
+                  {!isActive && (
+                    <View>
+                      <Text
+                        style={{
+                          fontSize: 30,
+                          fontWeight: "bold",
+                          color: Colors.dark,
+                        }}
+                      >
+                        £ {tickers[tickers.length - 1].price.toFixed(2)}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 18,
+                          color: Colors.gray,
+                        }}
+                      >
+                        Today
+                      </Text>
+                    </View>
                   )}
-                </CartesianChart>
+                  {isActive && (
+                    <View>
+                      <AnimatedTextInput
+                        editable={false}
+                        underlineColorAndroid={"transparent"}
+                        style={{
+                          fontSize: 30,
+                          fontWeight: "bold",
+                          color: Colors.dark,
+                        }}
+                        animatedProps={animatedText}
+                      />
+                      <AnimatedTextInput
+                        editable={false}
+                        underlineColorAndroid={"transparent"}
+                        style={{
+                          fontSize: 18,
+                          color: Colors.gray,
+                        }}
+                        animatedProps={animatedDateText}
+                      />
+                    </View>
+                  )}
+                  <CartesianChart
+                    chartPressState={state}
+                    data={tickers! as any[]}
+                    axisOptions={
+                      {
+                        font: font,
+                        tickCount: 5,
+                        labelOffset: { x: -2, y: 0 },
+                        formatYLabel: (value) => `£${value / 1000}k`,
+                        formatXLabel: (ms) => format(new Date(ms), "MM/yy"),
+                      } ?? {}
+                    }
+                    xKey="timestamp"
+                    yKeys={["price"]}
+                  >
+                    {/* 👇 render function exposes various data, such as points. */}
+                    {({ points }) => (
+                      // 👇 and we'll use the Line component to render a line path.
+                      <>
+                        {isActive && (
+                          <ToolTip
+                            x={state.x.position}
+                            y={state.y.price.position}
+                          />
+                        )}
+                        <Line
+                          points={points.price}
+                          color={Colors.primary}
+                          strokeWidth={3}
+                        />
+                      </>
+                    )}
+                  </CartesianChart>
+                </>
               )}
             </View>
             <View style={[defaultStyles.block, { marginTop: 20 }]}>
